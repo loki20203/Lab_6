@@ -1,30 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public class Repository<T>
+public class FunctionCache<TKey, TResult>
 {
-    private List<T> items = new List<T>();
+    private readonly Dictionary<TKey, CacheItem> cache = new Dictionary<TKey, CacheItem>();
+    private readonly TimeSpan defaultExpiration;
 
-    // Делегат Criteria<T> для перевірки умови
-    public delegate bool Criteria(T item);
-
-    // Метод для додавання елемента до репозиторію
-    public void Add(T item)
+    // Конструктор з можливістю встановлення стандартного терміну дії кешу
+    public FunctionCache(TimeSpan? expiration = null)
     {
-        items.Add(item);
+        defaultExpiration = expiration ?? TimeSpan.FromMinutes(10); // Стандартний термін дії кешу - 10 хвилин
     }
 
-    // Метод для знаходження елементів за критерієм
-    public List<T> Find(Criteria criteria)
+    // Делегат для користувацьких функцій
+    public delegate TResult Func(TKey key);
+
+    // Клас для зберігання кешованих значень разом з часом їхнього створення
+    private class CacheItem
     {
-        List<T> result = new List<T>();
-        foreach (var item in items)
+        public TResult Value { get; }
+        public DateTime Expiration { get; }
+
+        public CacheItem(TResult value, TimeSpan expiration)
         {
-            if (criteria(item))
+            Value = value;
+            Expiration = DateTime.Now.Add(expiration);
+        }
+
+        public bool IsExpired => DateTime.Now >= Expiration;
+    }
+
+    // Метод для отримання результату з кешу або виконання функції
+    public TResult GetOrAdd(TKey key, Func func, TimeSpan? expiration = null)
+    {
+        if (cache.ContainsKey(key))
+        {
+            var cacheItem = cache[key];
+            if (!cacheItem.IsExpired)
             {
-                result.Add(item);
+                return cacheItem.Value;
+            }
+            else
+            {
+                // Видаляємо прострочене значення
+                cache.Remove(key);
             }
         }
+
+        // Виконуємо функцію, якщо результат не знайдено або він прострочений
+        TResult result = func(key);
+        cache[key] = new CacheItem(result, expiration ?? defaultExpiration);
         return result;
+    }
+
+    // Метод для очищення кешу
+    public void Clear()
+    {
+        cache.Clear();
+    }
+
+    // Метод для видалення певного елемента з кешу
+    public bool Remove(TKey key)
+    {
+        return cache.Remove(key);
     }
 }
