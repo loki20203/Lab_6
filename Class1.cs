@@ -1,28 +1,30 @@
 ﻿using System;
+using System.Collections.Generic;
 
-public class Calculator<T> where T : struct
+public class Repository<T>
 {
-    // Делегати для арифметичних операцій
-    public delegate T Operation(T a, T b);
+    private List<T> items = new List<T>();
 
-    // Методи для арифметичних операцій
-    public static T Add(T a, T b, Operation operation)
+    // Делегат Criteria<T> для перевірки умови
+    public delegate bool Criteria(T item);
+
+    // Метод для додавання елемента до репозиторію
+    public void Add(T item)
     {
-        return operation(a, b);
+        items.Add(item);
     }
 
-    public static T Subtract(T a, T b, Operation operation)
+    // Метод для знаходження елементів за критерієм
+    public List<T> Find(Criteria criteria)
     {
-        return operation(a, b);
-    }
-
-    public static T Multiply(T a, T b, Operation operation)
-    {
-        return operation(a, b);
-    }
-
-    public static T Divide(T a, T b, Operation operation)
-    {
-        return operation(a, b);
+        List<T> result = new List<T>();
+        foreach (var item in items)
+        {
+            if (criteria(item))
+            {
+                result.Add(item);
+            }
+        }
+        return result;
     }
 }

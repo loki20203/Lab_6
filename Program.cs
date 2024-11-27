@@ -2,28 +2,28 @@
 {
     public static void Main()
     {
-        // Використання для типу int
-        Calculator<int>.Operation intAdd = (a, b) => a + b;
-        Calculator<int>.Operation intSubtract = (a, b) => a - b;
-        Calculator<int>.Operation intMultiply = (a, b) => a * b;
-        Calculator<int>.Operation intDivide = (a, b) => a / b;
+        Repository<Person> personRepository = new Repository<Person>();
 
-        Console.WriteLine("Int Operations:");
-        Console.WriteLine($"Add: {Calculator<int>.Add(5, 3, intAdd)}");
-        Console.WriteLine($"Subtract: {Calculator<int>.Subtract(5, 3, intSubtract)}");
-        Console.WriteLine($"Multiply: {Calculator<int>.Multiply(5, 3, intMultiply)}");
-        Console.WriteLine($"Divide: {Calculator<int>.Divide(5, 3, intDivide)}");
+        // Додаємо осіб до репозиторію
+        personRepository.Add(new Person("Alice", 30));
+        personRepository.Add(new Person("Bob", 20));
+        personRepository.Add(new Person("Charlie", 25));
+        personRepository.Add(new Person("David", 30));
 
-        // Використання для типу double
-        Calculator<double>.Operation doubleAdd = (a, b) => a + b;
-        Calculator<double>.Operation doubleSubtract = (a, b) => a - b;
-        Calculator<double>.Operation doubleMultiply = (a, b) => a * b;
-        Calculator<double>.Operation doubleDivide = (a, b) => a / b;
+        // Знаходимо осіб старше 25 років
+        List<Person> olderThan25 = personRepository.Find(p => p.Age > 25);
+        Console.WriteLine("Persons older than 25:");
+        foreach (var person in olderThan25)
+        {
+            Console.WriteLine(person);
+        }
 
-        Console.WriteLine("\nDouble Operations:");
-        Console.WriteLine($"Add: {Calculator<double>.Add(5.5, 3.3, doubleAdd)}");
-        Console.WriteLine($"Subtract: {Calculator<double>.Subtract(5.5, 3.3, doubleSubtract)}");
-        Console.WriteLine($"Multiply: {Calculator<double>.Multiply(5.5, 3.3, doubleMultiply)}");
-        Console.WriteLine($"Divide: {Calculator<double>.Divide(5.5, 3.3, doubleDivide)}");
+        // Знаходимо осіб з ім'ям, що починається на 'A'
+        List<Person> nameStartsWithA = personRepository.Find(p => p.Name.StartsWith("A"));
+        Console.WriteLine("\nPersons with name starting with 'A':");
+        foreach (var person in nameStartsWithA)
+        {
+            Console.WriteLine(person);
+        }
     }
 }
