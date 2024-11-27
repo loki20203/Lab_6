@@ -1,36 +1,38 @@
-﻿using System;
-
-public class Program
+﻿public class Program
 {
     public static void Main()
     {
-        // Створюємо кеш з терміном дії за замовчуванням - 5 хвилин
-        var cache = new FunctionCache<int, string>(TimeSpan.FromMinutes(5));
+        var scheduler = new TaskScheduler<string, int>();
 
-        // Функція для отримання значень
-        string GetValue(int key)
+        // Метод для виконання завдань
+        void ExecuteTask(string task)
         {
-            Console.WriteLine($"Computing value for key {key}");
-            return $"Value for key {key}";
+            Console.WriteLine($"Executing task: {task}");
         }
 
-        // Використовуємо кеш для отримання значень
-        string value1 = cache.GetOrAdd(1, GetValue);
-        Console.WriteLine(value1);
+        // Додавання завдань з консолі
+        while (true)
+        {
+            Console.WriteLine("Enter a task (or 'exit' to quit):");
+            string input = Console.ReadLine();
+            if (input.ToLower() == "exit")
+                break;
 
-        // Повторне отримання того ж значення з кешу
-        string value2 = cache.GetOrAdd(1, GetValue);
-        Console.WriteLine(value2);
+            Console.WriteLine("Enter the task priority (integer):");
+            int priority;
+            while (!int.TryParse(Console.ReadLine(), out priority))
+            {
+                Console.WriteLine("Invalid input. Please enter a valid integer for priority:");
+            }
 
-        // Отримання нового значення з іншим ключем
-        string value3 = cache.GetOrAdd(2, GetValue);
-        Console.WriteLine(value3);
+            scheduler.AddTask(input, priority);
 
-        // Чекаємо 6 хвилин, щоб перевірити термін дії кешу (для демонстрації)
-        System.Threading.Thread.Sleep(TimeSpan.FromMinutes(6));
-
-        // Отримання значення після закінчення терміну дії кешу
-        string value4 = cache.GetOrAdd(1, GetValue);
-        Console.WriteLine(value4);
+            Console.WriteLine("Enter 'execute' to run the next task or 'continue' to add more tasks:");
+            string command = Console.ReadLine();
+            if (command.ToLower() == "execute")
+            {
+                scheduler.ExecuteNext(ExecuteTask);
+            }
+        }
     }
 }

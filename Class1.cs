@@ -1,67 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public class FunctionCache<TKey, TResult>
+public class TaskScheduler<TTask, TPriority> where TPriority : IComparable<TPriority>
 {
-    private readonly Dictionary<TKey, CacheItem> cache = new Dictionary<TKey, CacheItem>();
-    private readonly TimeSpan defaultExpiration;
+    // Делегат для виконання завдання
+    public delegate void TaskExecution(TTask task);
 
-    // Конструктор з можливістю встановлення стандартного терміну дії кешу
-    public FunctionCache(TimeSpan? expiration = null)
+    // Клас для зберігання завдань з пріоритетом
+    private class PriorityTask : IComparable<PriorityTask>
     {
-        defaultExpiration = expiration ?? TimeSpan.FromMinutes(10); // Стандартний термін дії кешу - 10 хвилин
-    }
+        public TTask Task { get; }
+        public TPriority Priority { get; }
 
-    // Делегат для користувацьких функцій
-    public delegate TResult Func(TKey key);
-
-    // Клас для зберігання кешованих значень разом з часом їхнього створення
-    private class CacheItem
-    {
-        public TResult Value { get; }
-        public DateTime Expiration { get; }
-
-        public CacheItem(TResult value, TimeSpan expiration)
+        public PriorityTask(TTask task, TPriority priority)
         {
-            Value = value;
-            Expiration = DateTime.Now.Add(expiration);
+            Task = task;
+            Priority = priority;
         }
 
-        public bool IsExpired => DateTime.Now >= Expiration;
-    }
-
-    // Метод для отримання результату з кешу або виконання функції
-    public TResult GetOrAdd(TKey key, Func func, TimeSpan? expiration = null)
-    {
-        if (cache.ContainsKey(key))
+        public int CompareTo(PriorityTask other)
         {
-            var cacheItem = cache[key];
-            if (!cacheItem.IsExpired)
-            {
-                return cacheItem.Value;
-            }
-            else
-            {
-                // Видаляємо прострочене значення
-                cache.Remove(key);
-            }
+            // Більший пріоритет виконується раніше
+            return other.Priority.CompareTo(Priority);
         }
-
-        // Виконуємо функцію, якщо результат не знайдено або він прострочений
-        TResult result = func(key);
-        cache[key] = new CacheItem(result, expiration ?? defaultExpiration);
-        return result;
     }
 
-    // Метод для очищення кешу
-    public void Clear()
+    // Черга з пріоритетами для зберігання завдань
+    private readonly SortedSet<PriorityTask> taskQueue = new SortedSet<PriorityTask>();
+
+    // Метод для додавання завдання з пріоритетом
+    public void AddTask(TTask task, TPriority priority)
     {
-        cache.Clear();
+        taskQueue.Add(new PriorityTask(task, priority));
     }
 
-    // Метод для видалення певного елемента з кешу
-    public bool Remove(TKey key)
+    // Метод для виконання завдання з найвищим пріоритетом
+    public void ExecuteNext(TaskExecution execute)
     {
-        return cache.Remove(key);
+        if (taskQueue.Count > 0)
+        {
+            var nextTask = taskQueue.Min;
+            taskQueue.Remove(nextTask);
+            execute(nextTask.Task);
+        }
+        else
+        {
+            Console.WriteLine("No tasks to execute.");
+        }
+    }
+
+    // Метод для отримання завдання з черги
+    public TTask GetNextTask()
+    {
+        if (taskQueue.Count > 0)
+        {
+            var nextTask = taskQueue.Min;
+            taskQueue.Remove(nextTask);
+            return nextTask.Task;
+        }
+        return default;
     }
 }
